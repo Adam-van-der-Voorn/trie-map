@@ -117,13 +117,13 @@ public class TrieMap<T> {
                         .filter((entry) -> resultsB.containsKey(entry.getKey()))
                         
                         // combine each filtered result in A with the same result in B
-                        .map((entry) -> entry.getValue().intersect(resultsB.get(entry.getKey())))
-                        .collect(Collectors.toMap(SearchResult::getObj, Function.identity()));
+                        .map((entry) -> entry.getValue().combine(resultsB.get(entry.getKey())))
+                        .collect(Collectors.toMap(SearchResult::getItem, Function.identity()));
             }
             List<SearchResult> results = new ArrayList<>(resultsA.values());
             Collections.sort(results, comparator.reversed());
             return results.stream()
-                    .map((e) -> e.obj)
+                    .map((e) -> e.item)
                     .collect(Collectors.toList());        
         } 
         // no matches found
@@ -165,7 +165,7 @@ public class TrieMap<T> {
     public Collection<T> items() {
         return rootNode.collect();
     }
-
+    
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder("root{");
@@ -201,7 +201,7 @@ public class TrieMap<T> {
         Set<TrieNode.ObjectAssocation<T>> associations = topNode.getChildAssociations(new HashSet<>());
         return associations.stream()
                 .map((e) -> new SearchResult(e.obj, keywordIndex, e.keywordIndex, keywords.size(), e.nOfKeywords))
-                .collect(Collectors.toMap(SearchResult::getObj, Function.identity(), (existing, replacement) -> existing));
+                .collect(Collectors.toMap(SearchResult::getItem, Function.identity(), (existing, replacement) -> existing));
     }
 
     private void removeKeyword(T associated, String keyword) throws NoAssociatedObjectsException {
@@ -229,14 +229,14 @@ public class TrieMap<T> {
      *
      */
     public class SearchResult {
-        private final T obj;
+        private final T item;
         private final int nOfObjectKeywords;
         private int nOfMatches = 0;
         private boolean[] matchTable;
         private float matchProportion = 0.0f;
 
-        SearchResult(T obj, int searchIndex, int storedIndex, int nOfSearchKeywords, int nOfObjKeywords) {
-            this.obj = obj;
+        SearchResult(T item, int searchIndex, int storedIndex, int nOfSearchKeywords, int nOfObjKeywords) {
+            this.item = item;
             this.nOfObjectKeywords = nOfObjKeywords;
             matchTable = new boolean[nOfSearchKeywords];
             if (searchIndex == storedIndex) {
@@ -245,8 +245,8 @@ public class TrieMap<T> {
             newMatch();
         }
 
-        SearchResult intersect(SearchResult other) {
-            assert (obj.equals(other.obj)) : "cannot intersect with a result with different obj association";
+        SearchResult combine(SearchResult other) {
+            assert (item.equals(other.item)) : "cannot intersect with a result with different obj association";
             newMatch();
             for (int i = 0; i < matchTable.length; i++) {
                 if (other.matchAt(i)) {
@@ -272,23 +272,23 @@ public class TrieMap<T> {
         }
 
         /**
-         * @return the object in this search result 
+         * @return the item in this search result 
          */
-        public T getObj() {
-            return obj;
+        public T getItem() {
+            return item;
         }
 
         public boolean equals(Object other) {
             if (other.getClass().toString().equals(getClass().toString())) {
                 @SuppressWarnings("unchecked")
 				SearchResult otherSR = (SearchResult) other;
-                return otherSR.obj.equals(obj);
+                return otherSR.item.equals(item);
             }
             return false;
         }
 
         public int hashCode() {
-            return obj.hashCode();
+            return item.hashCode();
         }
 
         private void newMatch() {

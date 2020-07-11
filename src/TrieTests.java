@@ -19,9 +19,9 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         if (!a.matchAt(0) && b.matchAt(0)) return -1;
         if (a.matchProportion() > b.matchProportion()) return 1;
         if (a.matchProportion() < b.matchProportion()) return -1;
-        int minLength = Math.min(a.getObj().length(), b.getObj().length());
+        int minLength = Math.min(a.getItem().length(), b.getItem().length());
         for (int i = 0; i < minLength; i++) {
-            char ac = a.getObj().charAt(i), bc = b.getObj().charAt(i);
+            char ac = a.getItem().charAt(i), bc = b.getItem().charAt(i);
             if (ac < bc) return 1;
             if (ac > bc) return -1;
         }
