@@ -102,8 +102,8 @@ class TrieNode<T>{
         }
     }
 
-    Set<T> collect() {
-        Set<T> collection = new HashSet<>();
+    Collection<T> collect() {
+    	Collection<T> collection = new HashSet<>();
         for (ObjectAssocation<T> objectAssociation : associatedObjects.values()) {
             collection.add(objectAssociation.obj);
         }

@@ -1,6 +1,7 @@
 package com.vandeadam.util;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
  * 
  * A data structure designed to retrieve a list of stored items based on a search done by a user.
  * 
- * Items are stored alongside a name. This name is brokwn down into keywords.
+ * Items are stored alongside a name. This name is broken down into keywords.
  * by default the name is broken down by:
  *  > concatenating the string around , or .
  *  > seperating keywords by using the regex [^a-zA-Z0-9&]+ as the delimiter.
@@ -35,47 +36,54 @@ import java.util.stream.Collectors;
  *  > the propotion of keyword matches for that object.
  *  > the order and amount of matches that line up in the search and the name
  *  
- * @param <T> 
- *
+ * @param <T> the type of item to store in the trie.
  * */
 public class TrieMap<T> {
-    private Comparator<SearchResult> comparator;
-    private Pattern toConcat;
-    private Pattern toSkip;
+    private Comparator<SearchResult> comparator = (a, b) -> 0; // compartor for sorting results
+    
+    /* regexs to aid in seperaing keywords from names  */
+    private Pattern toConcat = Pattern.compile("'|,"); // strings that fufull this pattern are removed, strings on either side are concatenated
+    private Pattern toSkip = Pattern.compile("[^a-zA-Z0-9&]+"); // pattern used as the delimiter to seperate keywords
+    
     private TrieNode<T> rootNode = new TrieNode<>(null, null);
     
     /**
-     * 
+     * Default constructor.
+     * Results are not sorted.
+     * Default concat pattern = "'|,"
+     * Default delimiter = "[^a-zA-Z0-9&]+"
      * */
-    public TrieMap() {
-        toConcat = Pattern.compile("'");
-        toSkip = Pattern.compile("[^a-zA-Z0-9&]+");
-        comparator = (a, b) -> 0;
-    }
+    public TrieMap() {}
 
     /**
-     * @param comparator
+     * Constructor that takes a comparator for sorting the results.
+     * Default concat pattern = "'|,"
+     * Default delimiter = "[^a-zA-Z0-9&]+"
+     * 
+     * @param comparator the comparator to use for sorting the search results. 
      */
     public TrieMap(Comparator<SearchResult> comparator) {
         this.comparator = comparator;
-        this.toConcat = Pattern.compile("'|,");
-        this.toSkip = Pattern.compile("[^a-zA-Z0-9&]+");
     }
 
     /**
-     * @param toConcat
-     * @param toSkip
+     * Constructor that changes the default patterns for breaking down the search and item name into keywords.
+     * Results are not sorted.
+     * 
+     * @param toConcat strings that fufull this pattern are removed, strings on either side are concatenated 
+     * @param toSkip pattern used as the delimiter to seperate keywords
      */
     public TrieMap(Pattern toConcat, Pattern toSkip) {
-        this.comparator = (a, b) -> 0;
         this.toConcat = toConcat;
         this.toSkip = toSkip;
     }
 
     /**
-     * @param comparator
-     * @param toConcat
-     * @param toSkip
+     * Constructor that changes the default patterns for breaking down the search and item name into keywords, 
+     * and also takes a comparator for sorting the results.
+     * @param comparator the comparator to use for sorting the search results. 
+     * @param toConcat strings that fufull this pattern are removed, strings on either side are concatenated 
+     * @param toSkip pattern used as the delimiter to seperate keywords
      */
     public TrieMap(Comparator<SearchResult> comparator, Pattern toConcat, Pattern toSkip) {
         this.comparator = comparator;
@@ -84,10 +92,14 @@ public class TrieMap<T> {
     }
 
     /**
-     * Searches the trie for any objects that are associated with the given name.
+     * Searches the trie for any items that match or partially match the given name.
+     * A item partially matching is where at least one search keyword matches a substring starting at index 0 of at least one keyword associated with the item.
+     * This means that if you search for the exact name of the item you want, it is guaranteed to be in the returned list.
+     * However if your search only partially matches the item you want,
+     * whether it will be in the list all depends on how you split up your keywords.
      *
-     * @param name the name of the object to search for.
-     * @return a list of all the objects associated with the input name, ordered by the comparator in this trie object.
+     * @param name the name of the item to search for.
+     * @return a list of all the items associated with the input name, ordered by the comparator in this trie object. 
      * an empty search input returns an empty list.
      * */
     public List<T> search(String name) {
@@ -99,8 +111,12 @@ public class TrieMap<T> {
             Map<T, SearchResult> resultsA = searchForKeyword(keywords,0);
             for (int i = 1; i < keywords.size(); i++) {
                 Map<T, SearchResult> resultsB = searchForKeyword(keywords, i);
+                
                 resultsA = resultsA.entrySet().stream()
+                		// filter out any items that don't at least partially match both keywords
                         .filter((entry) -> resultsB.containsKey(entry.getKey()))
+                        
+                        // combine each filtered result in A with the same result in B
                         .map((entry) -> entry.getValue().intersect(resultsB.get(entry.getKey())))
                         .collect(Collectors.toMap(SearchResult::getObj, Function.identity()));
             }
@@ -108,41 +124,45 @@ public class TrieMap<T> {
             Collections.sort(results, comparator.reversed());
             return results.stream()
                     .map((e) -> e.obj)
-                    .collect(Collectors.toList());
-        } catch (NoAssociatedObjectsException e) {
+                    .collect(Collectors.toList());        
+        } 
+        // no matches found
+        catch (NoAssociatedObjectsException e) { 
             return new ArrayList<>();
         }
     }
 
     /**
-     * puts an object in the trie.
-     * @param name the name of the object. The name is used as a search keyword. //TODO make more professional
-     * @param associated the object that is associated with the given name.
+     * puts an item in the trie with the given name.
+     * @param name the name of the object.
+     * @param item the item that is associated with the given name.
      * */
-    public void put(String name, T associated) {
+    public void put(String name, T item) {
         List<String> keywords = processName(name);
         for (int i = 0; i < keywords.size(); i++) {
-            rootNode.pass(keywords.get(i), new TrieNode.ObjectAssocation<>(associated, i, keywords.size()), 0);
+            rootNode.pass(keywords.get(i), new TrieNode.ObjectAssocation<>(item, i, keywords.size()), 0);
         }
     }
 
     /**
-     * removes an object from the trie.
-     * @param name 
-     * @param associated 
+     * removes an item from the trie.
+     * @param name the name of the object.
+     * @param item the item that is associated with the given name.
      * @throws NoAssociatedObjectsException 
      * */
-    public void remove(String name, T associated) throws NoAssociatedObjectsException {
+    public void remove(String name, T item) throws NoAssociatedObjectsException {
         List<String> keywords = processName(name);
         for (String keyword : keywords) {
-            removeKeyword(associated, keyword);
+            removeKeyword(item, keyword);
         }
     }
 
     /**
-     * @return all of the stored objects in this TrieMap
+     * returns all the items in this TrieMap.
+     * O(n) compexity, where n is the # of items.
+     * @return all of the items in this TrieMap
      */
-    public Set<T> getAll() {
+    public Collection<T> items() {
         return rootNode.collect();
     }
 

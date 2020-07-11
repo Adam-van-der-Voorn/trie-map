@@ -5,6 +5,7 @@ import com.vandeadam.util.NoAssociatedObjectsException;
 import com.vandeadam.util.TrieMap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -583,12 +584,12 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
             t.put(str, "<" + str + ">");
         }
 
-        Set<String> expected = new HashSet<>();
+        Collection<String> expected = new HashSet<>();
         for (String str : trieInput) {
             expected.add("<" + str + ">");
         }
 
-        Set<String> actual = t.getAll();
+        Collection<String> actual = t.items();
 
         assertEquals(expected, actual);
     }
@@ -627,7 +628,7 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         String actual = t.toString();
 
         assertEquals(expected, actual);
-        assertFalse(t.getAll().contains("<colby aged>"));
+        assertFalse(t.items().contains("<colby aged>"));
     }
 
     // root of unique branch == root of trie
@@ -665,7 +666,7 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         String actual = t.toString();
 
         assertEquals(expected, actual);
-        assertFalse(t.getAll().contains("<10kg rice bag>"));
+        assertFalse(t.items().contains("<10kg rice bag>"));
     }
 
     // root of unique branch == node with single child
@@ -703,7 +704,7 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         String actual = t.toString();
 
         assertEquals(expected, actual);
-        assertFalse(t.getAll().contains("<knife sharpener>"));
+        assertFalse(t.items().contains("<knife sharpener>"));
     }
 
     // multiple obj associations on the obj to remove
@@ -741,7 +742,7 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         String actual = t.toString();
 
         assertEquals(expected, actual);
-        assertFalse(t.getAll().contains("<chicken breast>"));
+        assertFalse(t.items().contains("<chicken breast>"));
     }
 
     // removing the shorter word in a shared, single child, chain
@@ -780,7 +781,7 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         String actual = t.toString();
 
         assertEquals(expected, actual);
-        assertFalse(t.getAll().contains("<sharp cheddar cheese>"));
+        assertFalse(t.items().contains("<sharp cheddar cheese>"));
     }
 }
 
