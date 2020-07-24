@@ -198,6 +198,26 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
 
         assertEquals(expected, actual);
     }
+    
+    @Test
+    public void put_4_emojis() {
+        TrieMap<String> t = new TrieMap<>();
+        t.put("alien: \uD83D\uDC7D", "<alien emoji + text>");
+        String expected = "root{alien}";
+        String actual = t.toString();
+
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void put_5_emojis() {
+        TrieMap<String> t = new TrieMap<>();
+        t.put("\uD83D\uDC7D", "<just alien emoji>");
+        String expected = "root{}";
+        String actual = t.toString();
+
+        assertEquals(expected, actual);
+    }
 
     @Test
     public void search_0_pie() {
@@ -574,6 +594,46 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         assertEquals(expected, actual);
 
         actual = t.search("Fix & Fogg's \"everything\" butter");
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void search_3_1_emoji() {
+        TrieMap<String> t = new TrieMap<String>(fullComparator);
+        for (String str : trieInput2) {
+            t.put(str, "<" + str + ">");
+        }
+
+        List<String> expected = new ArrayList<>();
+        expected.add("<Fix & Fogg's \"everything\" butter>");
+
+        List<String> actual = t.search("foggs \uD83D\uDC7D");
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void search_3_2_single_emoji() {
+        TrieMap<String> t = new TrieMap<String>(fullComparator);
+        for (String str : trieInput2) {
+            t.put(str, "<" + str + ">");
+        }
+
+        List<String> expected = new ArrayList<>();
+
+        List<String> actual = t.search("\uD83D\uDC7D");
+        assertEquals(expected, actual);
+    }
+    
+    @Test
+    public void search_3_3_single_bracket() {
+        TrieMap<String> t = new TrieMap<String>(fullComparator);
+        for (String str : trieInput2) {
+            t.put(str, "<" + str + ">");
+        }
+
+        List<String> expected = new ArrayList<>();
+
+        List<String> actual = t.search("(");
         assertEquals(expected, actual);
     }
 

@@ -103,10 +103,10 @@ public class TrieMap<T> {
      * an empty search input returns an empty list.
      * */
     public List<T> search(String name) {
-        if (name.equals("")) {
-            return new ArrayList<>();
-        }
         List<String> keywords = processName(name);
+        if (keywords.isEmpty()) {
+        	return new ArrayList<>();
+        }
         try {
             Map<T, SearchResult> resultsA = searchForKeyword(keywords,0);
             for (int i = 1; i < keywords.size(); i++) {
@@ -197,7 +197,8 @@ public class TrieMap<T> {
     }
 
     private Map<T, SearchResult> searchForKeyword(List<String> keywords, int keywordIndex) throws NoAssociatedObjectsException{
-        TrieNode<T> topNode = rootNode.getNode(keywords.get(keywordIndex), 0);
+        
+    	TrieNode<T> topNode = rootNode.getNode(keywords.get(keywordIndex), 0);
         Set<TrieNode.ObjectAssocation<T>> associations = topNode.getChildAssociations(new HashSet<>());
         return associations.stream()
                 .map((e) -> new SearchResult(e.obj, keywordIndex, e.keywordIndex, keywords.size(), e.nOfKeywords))
