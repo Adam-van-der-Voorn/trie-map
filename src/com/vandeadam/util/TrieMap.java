@@ -1,5 +1,6 @@
 package com.vandeadam.util;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,8 +39,10 @@ import java.util.stream.Collectors;
  *  
  * @param <T> the type of item to store in the trie.
  * */
-public class TrieMap<T> {
-    private Comparator<SearchResult> comparator = (a, b) -> 0; // compartor for sorting results
+public class TrieMap<T> implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	private Comparator<SearchResult> comparator = (Comparator<SearchResult> & Serializable) (a, b) -> 0; // compartor for sorting results
     
     /* regexs to aid in seperaing keywords from names  */
     private Pattern toConcat = Pattern.compile("'|,"); // strings that fufull this pattern are removed, strings on either side are concatenated
@@ -229,8 +232,9 @@ public class TrieMap<T> {
      * @author ajvdv
      *
      */
-    public class SearchResult {
-        private final T item;
+    public class SearchResult implements Serializable {
+		private static final long serialVersionUID = 1L;
+		private final T item;
         private final int nOfObjectKeywords;
         private int nOfMatches = 0;
         private boolean[] matchTable;

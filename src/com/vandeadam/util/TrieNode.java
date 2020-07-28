@@ -1,4 +1,5 @@
 package com.vandeadam.util;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,8 +14,12 @@ import java.util.Set;
  * Recursive data structure that stores stops in a format that allows easy searching of them.
  * */
 
-class TrieNode<T>{
-    private Map<Character, TrieNode<T>> childCharacters = new HashMap<>();
+class TrieNode<T> implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private Map<Character, TrieNode<T>> childCharacters = new HashMap<>();
     private final Character character;
     private Map<T, ObjectAssocation<T>> associatedObjects = new HashMap<>();
     private TrieNode<T> parent;
@@ -165,8 +170,12 @@ class TrieNode<T>{
         childCharacters.remove(c);
     }
 
-    static class ObjectAssocation<T> {
-        T obj;
+    static class ObjectAssocation<T> implements Serializable {
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+		T obj;
         int keywordIndex;
         int nOfKeywords;
         ObjectAssocation(T obj, int keywordIndex, int nOfKeywords) {
