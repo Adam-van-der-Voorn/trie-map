@@ -1,24 +1,11 @@
+package com.gmail.adamvdvoorn;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import java.util.*;
 
-import com.vandeadam.util.NoAssociatedObjectsException;
-import com.vandeadam.util.TrieMap;
+import static org.junit.jupiter.api.Assertions.*;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static org.junit.Assert.*;
-
-public class TrieTests { //TODO make tests for: getAll(), remove()
+public class TrieTests {
     Comparator<TrieMap<String>.SearchResult> fullComparator = (a, b) -> {
         if (a.matchAt(0) && !b.matchAt(0)) return 1;
         if (!a.matchAt(0) && b.matchAt(0)) return -1;
@@ -569,6 +556,7 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
         assertEquals(expected, actual);
     }
 
+    @Test
     public void search_2_8_Caps_3() {
         TrieMap<String> t = new TrieMap<String>(fullComparator);
         for (String str : trieInput2) {
@@ -847,42 +835,6 @@ public class TrieTests { //TODO make tests for: getAll(), remove()
 
         assertEquals(expected, actual);
         assertFalse(t.items().contains("<sharp cheddar cheese>"));
-    }
-    
-    @Test
-    public void serializable() {
-    	TrieMap<String> t = new TrieMap<>();
-        for (String str : trieInput) {
-            t.put(str, "<" + str + ">");
-        }
-        
-        FileOutputStream fileOut; 
-        ObjectOutputStream out;
-        try {
-        	fileOut = new FileOutputStream("test.txt");
-        	out = new ObjectOutputStream(fileOut);
-			out.writeObject(t);
-			out.close();
-	        fileOut.close();
-		}
-        catch (IOException e) {
-			fail(e.toString());
-		}
-        
-        FileInputStream fileIn;
-        ObjectInputStream in;
-        TrieMap<String> newTrie = null;
-        try {
-	        fileIn = new FileInputStream("test.txt");
-	        in = new ObjectInputStream(fileIn);
-	        newTrie = (TrieMap<String>) in.readObject();
-	        in.close();
-	        fileIn.close();
-        }
-        catch (IOException | ClassNotFoundException e) {
-        	fail(e.toString());
-        }
-        assertEquals(t.toString(), newTrie.toString());
     }
 }
 

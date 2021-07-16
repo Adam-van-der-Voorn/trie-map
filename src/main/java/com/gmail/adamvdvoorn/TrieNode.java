@@ -1,27 +1,16 @@
-package com.vandeadam.util;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+package com.gmail.adamvdvoorn;
+
+import java.util.*;
 
 /**
- * TrieNode
+ * com.gmail.adamvdvoorn.TrieNode
  * Recursive data structure that stores stops in a format that allows easy searching of them.
  * */
 
-class TrieNode<T> implements Serializable{
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1L;
-	private Map<Character, TrieNode<T>> childCharacters = new HashMap<>();
+class TrieNode<T>{
+    private Map<Character, TrieNode<T>> childCharacters = new HashMap<>();
     private final Character character;
-    private Map<T, ObjectAssocation<T>> associatedObjects = new HashMap<>();
+    private Map<T, objectAssociation<T>> associatedObjects = new HashMap<>();
     private TrieNode<T> parent;
 
     TrieNode(Character character, TrieNode<T> parent) {
@@ -46,7 +35,7 @@ class TrieNode<T> implements Serializable{
         else throw new NoAssociatedObjectsException();
     }
 
-    void addAssociation(ObjectAssocation<T> association) {
+    void addAssociation(objectAssociation<T> association) {
         associatedObjects.put(association.obj, association);
     }
     void removeAssociation(T obj) {
@@ -64,7 +53,7 @@ class TrieNode<T> implements Serializable{
     /**
      * Recursive function
      * */
-    Set<ObjectAssocation<T>> getChildAssociations(Set<ObjectAssocation<T>> childAssociations) {
+    Set<objectAssociation<T>> getChildAssociations(Set<objectAssociation<T>> childAssociations) {
         if (!associatedObjects.isEmpty()) {
             childAssociations.addAll(associatedObjects.values());
         }
@@ -74,7 +63,7 @@ class TrieNode<T> implements Serializable{
         return childAssociations;
     }
 
-    Collection<ObjectAssocation<T>> getAssociatedObjects() {
+    Collection<objectAssociation<T>> getAssociatedObjects() {
         return Collections.unmodifiableCollection(associatedObjects.values());
     }
 
@@ -85,7 +74,7 @@ class TrieNode<T> implements Serializable{
      * > if this node cannot be found, a new child node is created and given the first character of the input string.
      * > the fist character is omitted from the input string and passed to the child node, where the process starts again.
      * */
-    void pass(String word, TrieNode.ObjectAssocation<T> associated, int index) {
+    void pass(String word, objectAssociation<T> associated, int index) {
         Character nextChar = word.charAt(index);
         TrieNode<T> nextNode;
 
@@ -109,7 +98,7 @@ class TrieNode<T> implements Serializable{
 
     Collection<T> collect() {
     	Collection<T> collection = new HashSet<>();
-        for (ObjectAssocation<T> objectAssociation : associatedObjects.values()) {
+        for (TrieNode.objectAssociation<T> objectAssociation : associatedObjects.values()) {
             collection.add(objectAssociation.obj);
         }
         for (TrieNode<T> child : childCharacters.values()) {
@@ -152,7 +141,7 @@ class TrieNode<T> implements Serializable{
             str.append("{");
             // sort children
             List<TrieNode<T>> children = new ArrayList<>(childCharacters.values());
-            children.sort((a, b) -> a.getChar() - b.getChar());
+            children.sort(Comparator.comparingInt(TrieNode::getChar));
             for (int i = 0; i < children.size(); i++) {
                 str.append(children.get(i).toString());
                 if (i < children.size() - 1) {
@@ -170,15 +159,11 @@ class TrieNode<T> implements Serializable{
         childCharacters.remove(c);
     }
 
-    static class ObjectAssocation<T> implements Serializable {
-		/**
-		 * 
-		 */
-		private static final long serialVersionUID = 1L;
-		T obj;
+    static class objectAssociation<T> {
+        T obj;
         int keywordIndex;
         int nOfKeywords;
-        ObjectAssocation(T obj, int keywordIndex, int nOfKeywords) {
+        objectAssociation(T obj, int keywordIndex, int nOfKeywords) {
             this.obj = obj;
             this.keywordIndex = keywordIndex;
             this.nOfKeywords = nOfKeywords;

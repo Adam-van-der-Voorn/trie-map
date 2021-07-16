@@ -1,32 +1,22 @@
-package com.vandeadam.util;
+package com.gmail.adamvdvoorn;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * 
  * A data structure designed to retrieve a list of stored items based on a search done by a user.
  * 
- * Items are stored alongside a name. This name is broken down into keywords.
+ * Adding
  * by default the name is broken down by:
- *  > concatenating the string around , or .
- *  > seperating keywords by using the regex [^a-zA-Z0-9&]+ as the delimiter.
- * eg. the name "bill's $1,000,000 idea (99% successful)" will be split into the keywords: 
- * bills, 1000000, idea, 99, and successful.
- * However these defaults can be changed. 
- * 
- * Items are accessed by searching for thier name.
+ *  > concatenating the string around , or '
+ *  > separating keywords by using the regex [^a-zA-Z0-9&]+ as the delimiter.
+ * eg. the name "bill's $1,000,000 idea (99% successful)" will be split into the keywords:
+ *
+ *      [ bills, 1000000, idea, 99, successful ]
+ *
+ * Stored tems are accessed by a string search.
  * A search will return a List of items that have names with keywords matching any part of the search.
  * If you search for the exact name of the item you want, it is guarnteed to be in the list.
  * However if your search only partially matches the item you want,
@@ -34,72 +24,82 @@ import java.util.stream.Collectors;
  * 
  * This List can be ordered by a given comparator. As well as the properties of the items themselves, 
  * the list can also be ordered by:
- *  > the propotion of keyword matches for that object.
+ *  > the proportion of keyword matches for that object.
  *  > the order and amount of matches that line up in the search and the name
  *  
  * @param <T> the type of item to store in the trie.
  * */
-public class TrieMap<T> implements Serializable {
-	private static final long serialVersionUID = 1L;
-
-	private Comparator<SearchResult> comparator = (Comparator<SearchResult> & Serializable) (a, b) -> 0; // compartor for sorting results
+public class TrieMap<T> {
+    private Comparator<SearchResult> comparator; // comparator for sorting results
     
     /* regexs to aid in seperaing keywords from names  */
-    private Pattern toConcat = Pattern.compile("'|,"); // strings that fufull this pattern are removed, strings on either side are concatenated
-    private Pattern toSkip = Pattern.compile("[^a-zA-Z0-9&]+"); // pattern used as the delimiter to seperate keywords
+    // strings that fufull this pattern are removed, strings on either side are concatenated
+    private Pattern toConcat;
+    // pattern used as the delimiter to seperate keywords
+    private Pattern delim;
     
-    private TrieNode<T> rootNode = new TrieNode<>(null, null);
+    private final TrieNode<T> rootNode = new TrieNode<>(null, null);
     
     /**
      * Default constructor.
      * Results are not sorted.
-     * Default concat pattern = "'|,"
-     * Default delimiter = "[^a-zA-Z0-9&]+"
+     * Default concat pattern = [',]
+     * Default delimiter = [^a-zA-Z0-9&]+
      * */
-    public TrieMap() {}
+    public TrieMap() {
+        comparator = (a, b) -> 0;
+        toConcat = Pattern.compile("[',]");
+        delim = Pattern.compile("[^a-zA-Z0-9&]+");
+    }
 
     /**
      * Constructor that takes a comparator for sorting the results.
-     * Default concat pattern = "'|,"
-     * Default delimiter = "[^a-zA-Z0-9&]+"
-     * 
+     * Default concat pattern = [',]
+     * Default delimiter = [^a-zA-Z0-9&]+
      * @param comparator the comparator to use for sorting the search results. 
      */
     public TrieMap(Comparator<SearchResult> comparator) {
         this.comparator = comparator;
+        toConcat = Pattern.compile("[',]");
+        delim = Pattern.compile("[^a-zA-Z0-9&]+");
     }
 
     /**
-     * Constructor that changes the default patterns for breaking down the search and item name into keywords.
+     * Constructor to set patterns for breaking down the item's name into it's keywords.
      * Results are not sorted.
-     * 
-     * @param toConcat strings that fufull this pattern are removed, strings on either side are concatenated 
-     * @param toSkip pattern used as the delimiter to seperate keywords
+     * @param toConcat strings that fulfill this pattern are removed, strings on either side are concatenated
+     * @param delim pattern used as the delimiter to separate keywords
      */
-    public TrieMap(Pattern toConcat, Pattern toSkip) {
+    public TrieMap(Pattern toConcat, Pattern delim) {
+        comparator = (a, b) -> 0;
         this.toConcat = toConcat;
-        this.toSkip = toSkip;
+        this.delim = delim;
     }
 
     /**
-     * Constructor that changes the default patterns for breaking down the search and item name into keywords, 
+     * Constructor to set patterns for breaking down the item's name into it's keywords,
      * and also takes a comparator for sorting the results.
      * @param comparator the comparator to use for sorting the search results. 
-     * @param toConcat strings that fufull this pattern are removed, strings on either side are concatenated 
-     * @param toSkip pattern used as the delimiter to seperate keywords
+     * @param toConcat strings that fulfill this pattern are removed, strings on either side are concatenated
+     * @param delim pattern used as the delimiter to separate keywords
      */
-    public TrieMap(Comparator<SearchResult> comparator, Pattern toConcat, Pattern toSkip) {
+    public TrieMap(Comparator<SearchResult> comparator, Pattern toConcat, Pattern delim) {
         this.comparator = comparator;
         this.toConcat = toConcat;
-        this.toSkip = toSkip;
+        this.delim = delim;
     }
 
     /**
      * Searches the trie for any items that match or partially match the given name.
-     * A item partially matching is where at least one search keyword matches a substring starting at index 0 of at least one keyword associated with the item.
-     * This means that if you search for the exact name of the item you want, it is guaranteed to be in the returned list.
-     * However if your search only partially matches the item you want,
-     * whether it will be in the list all depends on how you split up your keywords.
+     * The given name is broken into keywords using the patterns defined at construction time.
+     * An item will be returned if all the search keywords at least partially match some or all of the stored keywords
+     * of an item.
+     * A keyword partially matching is where a substring (starting at index 0) of a given keyword matches a substring
+     * (starting at index 0) of a stored keyword.
+     * This means that if your search string equals the name you stored your item under, it is guaranteed to be in the
+     * returned list.
+     * However, if your search only partially matches the item you want, whether it will be in the list all depends on
+     * the patterns you defined at construction time.
      *
      * @param name the name of the item to search for.
      * @return a list of all the items associated with the input name, ordered by the comparator in this trie object. 
@@ -124,7 +124,7 @@ public class TrieMap<T> implements Serializable {
                         .collect(Collectors.toMap(SearchResult::getItem, Function.identity()));
             }
             List<SearchResult> results = new ArrayList<>(resultsA.values());
-            Collections.sort(results, comparator.reversed());
+            results.sort(comparator.reversed());
             return results.stream()
                     .map((e) -> e.item)
                     .collect(Collectors.toList());        
@@ -143,7 +143,7 @@ public class TrieMap<T> implements Serializable {
     public void put(String name, T item) {
         List<String> keywords = processName(name);
         for (int i = 0; i < keywords.size(); i++) {
-            rootNode.pass(keywords.get(i), new TrieNode.ObjectAssocation<>(item, i, keywords.size()), 0);
+            rootNode.pass(keywords.get(i), new TrieNode.objectAssociation<>(item, i, keywords.size()), 0);
         }
     }
 
@@ -151,7 +151,7 @@ public class TrieMap<T> implements Serializable {
      * removes an item from the trie.
      * @param name the name of the object.
      * @param item the item that is associated with the given name.
-     * @throws NoAssociatedObjectsException 
+     * @throws NoAssociatedObjectsException if an item under that name does not exist.
      * */
     public void remove(String name, T item) throws NoAssociatedObjectsException {
         List<String> keywords = processName(name);
@@ -162,20 +162,20 @@ public class TrieMap<T> implements Serializable {
 
     /**
      * returns all the items in this TrieMap.
-     * O(n) compexity, where n is the # of items.
+     * O(n) complexity, where n is the # of items.
      * @return all of the items in this TrieMap
      */
     public Collection<T> items() {
         return rootNode.collect();
     }
-    
+
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder("root{");
 
         // sort children for predictability
         List<TrieNode<T>> children = new ArrayList<>(rootNode.getChildren());
-        children.sort((a, b) -> a.getChar() - b.getChar());
+        children.sort(Comparator.comparingInt(TrieNode::getChar));
 
         for (int i = 0; i < children.size(); i++) {
             str.append(children.get(i).toString());
@@ -191,7 +191,7 @@ public class TrieMap<T> implements Serializable {
         name = toConcat.matcher(name).replaceAll("");
         List<String> keywords = new ArrayList<>();
         Scanner in = new Scanner(name);
-        in.useDelimiter(toSkip);
+        in.useDelimiter(delim);
         while (in.hasNext()) {
             keywords.add(in.next().toLowerCase());
         }
@@ -202,7 +202,7 @@ public class TrieMap<T> implements Serializable {
     private Map<T, SearchResult> searchForKeyword(List<String> keywords, int keywordIndex) throws NoAssociatedObjectsException{
         
     	TrieNode<T> topNode = rootNode.getNode(keywords.get(keywordIndex), 0);
-        Set<TrieNode.ObjectAssocation<T>> associations = topNode.getChildAssociations(new HashSet<>());
+        Set<TrieNode.objectAssociation<T>> associations = topNode.getChildAssociations(new HashSet<>());
         return associations.stream()
                 .map((e) -> new SearchResult(e.obj, keywordIndex, e.keywordIndex, keywords.size(), e.nOfKeywords))
                 .collect(Collectors.toMap(SearchResult::getItem, Function.identity(), (existing, replacement) -> existing));
@@ -229,12 +229,11 @@ public class TrieMap<T> implements Serializable {
     }
     
     /**
-     * @author ajvdv
-     *
+     * Represents an item that has been selected by a search.
+     * Contains the item, and search related data that can be used for ordering search results.
      */
-    public class SearchResult implements Serializable {
-		private static final long serialVersionUID = 1L;
-		private final T item;
+    public class SearchResult {
+        private final T item;
         private final int nOfObjectKeywords;
         private int nOfMatches = 0;
         private boolean[] matchTable;
@@ -263,14 +262,15 @@ public class TrieMap<T> implements Serializable {
 
         /**
          * @param n
-         * @return whether the nth keyword in the seach is also the nth keyword in this objects name
+         * @return true if the nth keyword in the search is also the nth keyword in this objects name
          */
         public boolean matchAt(int n) {
             return matchTable[n];
         }
 
         /**
-         * @return the proportion of keyword matches in this result
+         * @return the proportion of keyword matches in this result,
+         * ie (# matches / # keywords associated with objects)
          */
         public float matchProportion() {
             return matchProportion;
@@ -283,13 +283,13 @@ public class TrieMap<T> implements Serializable {
             return item;
         }
 
-        public boolean equals(Object other) {
-            if (other.getClass().toString().equals(getClass().toString())) {
-                @SuppressWarnings("unchecked")
-				SearchResult otherSR = (SearchResult) other;
-                return otherSR.item.equals(item);
-            }
-            return false;
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            @SuppressWarnings("unchecked")
+            SearchResult that = (SearchResult) o;
+            return item.equals(that.item);
         }
 
         public int hashCode() {
@@ -301,5 +301,4 @@ public class TrieMap<T> implements Serializable {
             matchProportion = ((float)nOfMatches) / nOfObjectKeywords;
         }
     }
-
 }
