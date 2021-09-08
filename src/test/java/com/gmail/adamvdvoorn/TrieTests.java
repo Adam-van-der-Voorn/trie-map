@@ -1,5 +1,8 @@
 package com.gmail.adamvdvoorn;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.*;
 
@@ -646,6 +649,7 @@ public class TrieTests {
 
         assertEquals(expected, actual);
     }
+
     @Test
     // root of unique branch == node with multiple children
     public void remove_1() {
@@ -836,19 +840,28 @@ public class TrieTests {
         assertEquals(expected, actual);
         assertFalse(t.items().contains("<sharp cheddar cheese>"));
     }
+
+    // Testing the case where the name remains unprocessed
+    @ParameterizedTest
+    @CsvSource({
+            "cheese wheel, 1",
+            "che, 1",
+            "cheese, 1",
+            "wheel, 0",
+
+            "Fix & Fogg's \"everything\" butter, 1",
+            "butter, 0",
+            "fix, 1",
+            "fog, 0",
+            "fix & fogg, 1"
+    })
+    public void noProcessing(String searchStr, int expectedNumResults) {
+        TrieMap<String> t = new TrieMap<>("", "$");
+        t.put("cheese wheel", "<cheese wheel>");
+        t.put("Fix & Fogg's \"everything\" butter", "<Fix & Fogg's>");
+        assertEquals(expectedNumResults, t.search(searchStr).size());
+    }
 }
-
-// things the the user should be able to sort by:
-
-// > whether the matched token position in the object correlates with the token in the search
-// i.e. if the search is "sliced cheese" then "sliced cheese" would have a token match for <0> and <1>,
-// "sliced edam cheese" would have a token match for <0> and "orange cheese sliced" would have a token match for <2>"
-
-// > the proportion of token matches
-// i.e. if the search is "chicken" then "chicken breast" would have 50% token matches, but "chicken thigh bone in"
-// would have only 25%
-
-// nothing else of note matters for sorting, just those two
 
 
 

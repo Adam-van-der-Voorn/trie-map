@@ -6,19 +6,22 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * A data structure designed to retrieve a list of stored items based on a search done by a user.
+ * <p>
+ * Data structure designed to retrieve a list of stored items based on a search done by a user.
  * 
- * Adding
- * by default the name is broken down by:
- *  > concatenating the string around , or '
- *  > separating keywords by using the regex [^a-zA-Z0-9&]+ as the delimiter.
- * eg. the name "bill's $1,000,000 idea (99% successful)" will be split into the keywords:
+ * Adding an item:
+ * You add an item by default the name is broken down into keywords by separating around whitespace.
+ * e.g. the name "bill's $1,000,000 idea (99% successful)" will be split into the keywords:
  *
- *      [ bills, 1000000, idea, 99, successful ]
+ *      bill's
+ *      $1,000,000
+ *      idea
+ *      (99%
+ *      successful)
  *
- * Stored tems are accessed by a string search.
+ * These keywords are associated with the item in the data structure.
  * A search will return a List of items that have names with keywords matching any part of the search.
- * If you search for the exact name of the item you want, it is guarnteed to be in the list.
+ * If you search for the exact name of the item you want, it is guaranteed to be in the list.
  * However if your search only partially matches the item you want,
  * whether it will be in the list all depends on how you split up your keywords.
  * 
@@ -26,16 +29,16 @@ import java.util.stream.Collectors;
  * the list can also be ordered by:
  *  > the proportion of keyword matches for that object.
  *  > the order and amount of matches that line up in the search and the name
- *  
+ * </p>
  * @param <T> the type of item to store in the trie.
  * */
 public class TrieMap<T> {
     private Comparator<SearchResult> comparator; // comparator for sorting results
     
-    /* regexs to aid in seperaing keywords from names  */
-    // strings that fufull this pattern are removed, strings on either side are concatenated
+    /* regexes to aid in separating keywords from names  */
+    // strings that fulfil this pattern are removed, strings on either side are concatenated
     private Pattern toConcat;
-    // pattern used as the delimiter to seperate keywords
+    // pattern used as the delimiter to separate keywords
     private Pattern delim;
     
     private final TrieNode<T> rootNode = new TrieNode<>(null, null);
@@ -70,10 +73,10 @@ public class TrieMap<T> {
      * @param toConcat strings that fulfill this pattern are removed, strings on either side are concatenated
      * @param delim pattern used as the delimiter to separate keywords
      */
-    public TrieMap(Pattern toConcat, Pattern delim) {
+    public TrieMap(String toConcat, String delim) {
         comparator = (a, b) -> 0;
-        this.toConcat = toConcat;
-        this.delim = delim;
+        this.toConcat = Pattern.compile(toConcat);
+        this.delim = Pattern.compile(delim);
     }
 
     /**
